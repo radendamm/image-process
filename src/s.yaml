@@ -22,11 +22,9 @@ name: image-compress
 access: "{{ access }}"
 
 vars: # 全局变量
-  # region: "{{ region }}"
-  region: "cn-shanghai"
+  region: "{{ region }}"
   service:
-    # name: "{{ serviceName }}"
-    name: "muwu-s1"
+    name: "{{ serviceName }}"
     description: 'image compress'
 
 services:
@@ -39,8 +37,7 @@ services:
       region: ${vars.region} # 关于变量的使用方法，可以参考：https://www.serverless-devs.com/serverless-devs/yaml#变量赋值
       service: ${vars.service}
       function:
-        # name: "{{ functionName }}"
-        name: "f1"
+        name: "{{ functionName }}"
         description: 'image compress'
         codeUri: './code'
         runtime: python3.9
