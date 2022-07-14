@@ -18,9 +18,9 @@ Tags: #标签详情
   - 图片处理
 Category: 图文处理
 Service:
-  对象存储:
+  函数计算:
     Authorities:
-      - AliyunOSSReadOnlyAccess
+      - AliyunFCFullAccess
     Runtime: Python3
 Parameters:
   type: object
@@ -60,6 +60,19 @@ Parameters:
       type: string
       default: image-process
       description: 服务名称，只能包含字母、数字、下划线和中划线。不能以数字、中划线开头。长度在 1-128 之间
+    roleArn:
+      title: RAM角色ARN
+      type: string
+      default: ''
+      pattern: '^acs:ram::[0-9]*:role/.*$'
+      description: 应用所属的函数计算服务配置的 role
+      required: true
+      x-role:
+        name: fcossrole
+        service: fc
+        authorities:
+          - AliyunOSSReadOnlyAccess
+          - AliyunFCDefaultRolePolicy
     functionName:
       title: 函数名
       type: string

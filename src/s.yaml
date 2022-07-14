@@ -26,6 +26,7 @@ vars: # 全局变量
   service:
     name: "{{ serviceName }}"
     description: 'image compress'
+    role: "{{ roleArn }}"
 
 services:
   framework: # 业务名称/模块名称
