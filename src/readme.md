@@ -23,10 +23,9 @@
 ## 前期准备
 使用该项目，推荐您拥有以下的产品权限 / 策略：
 
-| 服务 |  权限策略 |     
+| 服务/业务 | 函数计算 |      
 | --- |  --- |   
-| 对象存储 | AliyunOSSReadOnlyAccess |     
-
+| 权限/策略 | AliyunFCFullAccess |  
 
 </table>
 
@@ -34,9 +33,7 @@
 
 # 代码 & 预览
 
-- [:smiley_cat: 预览](http://f1.muwu-s1.1237050315505682.cn-shanghai.fc.devsapp.net/)
-- [:smiley_cat: 源代码](https://github.com/awesome-fc/image-process)
-        
+- [ :smiley_cat:  源代码](https://github.com/awesome-fc/image-process/tree/master/src)
 
 </codepre>
 
@@ -46,7 +43,7 @@
 
 <appcenter>
 
-- :fire: 通过 [Serverless 应用中心](https://fcnext.console.aliyun.com/applications/create?template=image-process) ，
+-  :fire:  通过 [Serverless 应用中心](https://fcnext.console.aliyun.com/applications/create?template=image-process) ，
 [![Deploy with Severless Devs](https://img.alicdn.com/imgextra/i1/O1CN01w5RFbX1v45s8TIXPz_!!6000000006118-55-tps-95-28.svg)](https://fcnext.console.aliyun.com/applications/create?template=image-process)  该应用。 
 
 </appcenter>
