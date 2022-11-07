@@ -19,10 +19,30 @@ def oss_get_image_data(context, path):
                              '-internal.aliyuncs.com', bucket)
     return oss_client.get_object(object)
 
+def oss_save_image_data(context, img, path):
+    parts = path.split('/')
+    bucket = parts[0]
+    object = '/'.join(parts[1:])
+    creds = context.credentials
+    auth = oss2.StsAuth(creds.accessKeyId,
+                        creds.accessKeySecret, creds.securityToken)
+    oss_client = oss2.Bucket(auth, 'oss-' + context.region +
+                             '-internal.aliyuncs.com', bucket)
+    oss_client.put_object(object, img.make_blob())
+
+def make_response(context, img):
+    target = bottle.request.query.get('target')
+    if target is not None and len(target) > 0:
+        bottle.response.content_type = 'text/plain'
+        oss_save_image_data(context, img, target)
+        return {'object': target}
+    else:
+        bottle.response.content_type = 'image/jpeg'
+        return img.make_blob()
+
 @bottle.route('/pinjie', method='GET')
 def pinjie():
     try:
-        bottle.response.content_type = 'image/jpeg'
         image1 = bottle.request.query.get('left')
         image2 = bottle.request.query.get('right')
         print('pinjie images: ', image1, image2)
@@ -33,7 +53,7 @@ def pinjie():
                     img.format = 'jpg'
                     img.composite(f1, left=0, top=0)
                     img.composite(f2, left=f1.width+10, top=0)
-                    return img.make_blob()
+                    return make_response(context, img)
     except Exception as ex:
         bottle.response.content_type = 'text/plain'
         return 'ERROR: ' + traceback.format_exc()
@@ -41,7 +61,6 @@ def pinjie():
 @bottle.route('/watermark', method='GET')
 def watermark():
     try:
-        bottle.response.content_type = 'image/jpeg'
         image = bottle.request.query.get('img')
         text = bottle.request.query.get('text')
         print('watermark image: {}, text: {}'.format(image, text))
@@ -62,7 +81,7 @@ def watermark():
                 with img.clone() as base:
                     base.format = 'jpg'
                     base.watermark(water, 0.3, 0, int(img.height-30))
-                    return base.make_blob()
+                    return make_response(context, base)
     except Exception as ex:
         bottle.response.content_type = 'text/plain'
         return 'ERROR: ' + traceback.format_exc()
@@ -71,14 +90,13 @@ def watermark():
 @bottle.route('/format', method='GET')
 def format():
     try:
-        bottle.response.content_type = 'image/jpeg'
         image = bottle.request.query.get('img')
         fmt = bottle.request.query.get('fmt')
         print('format image: {}, fmt: {}'.format(image, fmt))
         context = bottle.request.environ.get('fc.context')
         with Image(file=oss_get_image_data(context, image)) as img:
             img.format = fmt
-            return img.make_blob()
+            return make_response(context, img)
     except Exception as ex:
         bottle.response.content_type = 'text/plain'
         return 'ERROR: ' + traceback.format_exc()

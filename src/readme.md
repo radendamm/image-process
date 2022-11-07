@@ -66,6 +66,7 @@
 | 拼接 | /pinjie | left=bucket/image1.jpg&right=bucket/image2.jpg |    
 | 水印 | /watermark | img=bucket/image.jpg&text=hello-fc |    
 | 格式转换 | /format | img=bucket/image.jpg&fmt=png |    
+| 保存结果 | 上述参数均可 | img=bucket/image.jpg&fmt=png&target=bucket/output.png |    
 
 </appdetail>
 
