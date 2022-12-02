@@ -3,6 +3,9 @@
 import bottle
 import traceback
 import oss2
+import uuid
+import cv2
+import os
 import json
 from wand.image import Image
 from wand.drawing import Drawing
@@ -97,6 +100,36 @@ def format():
         with Image(file=oss_get_image_data(context, image)) as img:
             img.format = fmt
             return make_response(context, img)
+    except Exception as ex:
+        bottle.response.content_type = 'text/plain'
+        return 'ERROR: ' + traceback.format_exc()
+
+@bottle.route('/gray',method='GET')
+def gray():
+    try:
+        OSS_BUCKET_NAME = 'zc-tmp'
+        context = bottle.request.environ.get('fc.context')
+        path_info = bottle.request.path
+        bpath = path_info[1:]
+        creds = context.credentials
+        auth = oss2.StsAuth(creds.accessKeyId,
+                            creds.accessKeySecret, creds.securityToken)
+        bucket = oss2.Bucket(auth, 'http://oss-cn-hangzhou.aliyuncs.com', OSS_BUCKET_NAME)
+        fpath = '/tmp/' + str(uuid.uuid4()) + '_' + os.path.split(path_info)[-1]
+        bucket.get_object_to_file(bpath, fpath)
+        image = cv2.imread(fpath)
+
+        # 转为灰度图像
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        _, image = cv2.threshold(image, 100, 0xff, cv2.THRESH_BINARY)
+        wpath = fpath.replace(".", "_") + '.png'
+        cv2.imwrite(wpath, image)
+        f = open(wpath, 'rb')
+        result = f.read()
+        bucket.delete_object(fpath)
+        bottle.response.status = '200 OK'
+        bottle.response.content_type = 'image/png'
+        return result
     except Exception as ex:
         bottle.response.content_type = 'text/plain'
         return 'ERROR: ' + traceback.format_exc()
