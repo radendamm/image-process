@@ -110,7 +110,7 @@ def gray():
         OSS_BUCKET_NAME = 'zc-tmp'
         context = bottle.request.environ.get('fc.context')
         path_info = bottle.request.path
-        bpath = path_info[1:]
+        bpath = path_info[5:]
         creds = context.credentials
         auth = oss2.StsAuth(creds.accessKeyId,
                             creds.accessKeySecret, creds.securityToken)
@@ -126,9 +126,9 @@ def gray():
         cv2.imwrite(wpath, image)
         f = open(wpath, 'rb')
         result = f.read()
-        bucket.delete_object(fpath)
         bottle.response.status = '200 OK'
         bottle.response.content_type = 'image/png'
+        bucket.delete_object(fpath)
         return result
     except Exception as ex:
         bottle.response.content_type = 'text/plain'
