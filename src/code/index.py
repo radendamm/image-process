@@ -57,9 +57,8 @@ def oss_image_turn_gray(bucket, object):
     cv2.imwrite(wpath, image)
     f = open(wpath, 'rb')
     result = f.read()
-    bottle.response.status = '200 OK'
-    bottle.response.content_type = 'image/' + img_type
-    return result
+    os.remove(wpath)
+    return result, img_type
 
 
 def make_response(context, img):
@@ -143,7 +142,9 @@ def gray():
         parts = path.split('/')
         bucket = parts[0]
         object = '/'.join(parts[1:])
-        result = oss_image_turn_gray(bucket,object)
+        result, img_type = oss_image_turn_gray(bucket, object)
+        bottle.response.status = '200 OK'
+        bottle.response.content_type = 'image/' + img_type
         return result
     except Exception as ex:
         bottle.response.content_type = 'text/plain'
@@ -154,7 +155,9 @@ def gray():
 # def gray_index(path):
 #     try:
 #         bucket = {your bucket name}
-#         result = oss_image_turn_gray(bucket,path)
+#         result,img_type = oss_image_turn_gray(bucket,path)
+#         bottle.response.status = '200 OK'
+#         bottle.response.content_type = 'image/' + img_type
 #         return result
 #     except Exception as ex:
 #         bottle.response.content_type = 'text/plain'
