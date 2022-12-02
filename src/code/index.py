@@ -109,8 +109,8 @@ def gray():
     try:
         OSS_BUCKET_NAME = 'zc-tmp'
         context = bottle.request.environ.get('fc.context')
-        path_info = bottle.request.path
-        bpath = path_info[5:]
+        path_info = bottle.request.query.get('img')
+        bpath = path_info
         creds = context.credentials
         auth = oss2.StsAuth(creds.accessKeyId,
                             creds.accessKeySecret, creds.securityToken)
@@ -121,7 +121,6 @@ def gray():
 
         # 转为灰度图像
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        _, image = cv2.threshold(image, 100, 0xff, cv2.THRESH_BINARY)
         wpath = fpath.replace(".", "_") + '.png'
         cv2.imwrite(wpath, image)
         f = open(wpath, 'rb')
