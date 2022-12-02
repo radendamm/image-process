@@ -61,12 +61,13 @@
 
 使用python [wand](https://docs.wand-py.org/en/0.5.6/index.html)图片处理库进行常见的图片处理：
 
-| 功能 |  请求路径 | 参数 |   
-| --- |  --- | --- |  
-| 拼接 | /pinjie | left=bucket/image1.jpg&right=bucket/image2.jpg |    
-| 水印 | /watermark | img=bucket/image.jpg&text=hello-fc |    
-| 格式转换 | /format | img=bucket/image.jpg&fmt=png |    
-| 保存结果 | 上述参数均可 | img=bucket/image.jpg&fmt=png&target=bucket/output.png |    
+| 功能   | 请求路径       | 参数                                                    |   
+|------|------------|-------------------------------------------------------|  
+| 拼接   | /pinjie    | left=bucket/image1.jpg&right=bucket/image2.jpg        |    
+| 水印   | /watermark | img=bucket/image.jpg&text=hello-fc                    |    
+| 格式转换 | /format    | img=bucket/image.jpg&fmt=png                          |    
+| 图片转灰 | /gray/图片路径 | 无需参数                                                  |
+| 保存结果 | 上述参数均可     | img=bucket/image.jpg&fmt=png&target=bucket/output.png |    
 
 </appdetail>
 

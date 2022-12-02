@@ -3,10 +3,15 @@
 import bottle
 import traceback
 import oss2
+import uuid
+import cv2
+import os
 import json
+import numpy as np
 from wand.image import Image
 from wand.drawing import Drawing
 from wand.color import Color
+
 
 def oss_get_image_data(context, path):
     parts = path.split('/')
@@ -19,6 +24,7 @@ def oss_get_image_data(context, path):
                              '-internal.aliyuncs.com', bucket)
     return oss_client.get_object(object)
 
+
 def oss_save_image_data(context, img, path):
     parts = path.split('/')
     bucket = parts[0]
@@ -30,6 +36,32 @@ def oss_save_image_data(context, img, path):
                              '-internal.aliyuncs.com', bucket)
     oss_client.put_object(object, img.make_blob())
 
+
+def oss_image_turn_gray(bucket, object):
+    img_type = object.split('.')[-1]
+    if img_type != 'jpg' and img_type != 'jpeg' and img_type != 'webp' and img_type != 'png':
+        img_type = 'jpeg'
+
+    context = bottle.request.environ.get('fc.context')
+    creds = context.credentials
+    auth = oss2.StsAuth(creds.accessKeyId,
+                        creds.accessKeySecret, creds.securityToken)
+    oss_client = oss2.Bucket(auth, 'oss-' + context.region +
+                             '-internal.aliyuncs.com', bucket)
+
+    object_stream = oss_client.get_object(object)
+    bytes_as_np_array = np.frombuffer(object_stream.read(), dtype=np.uint8)
+    image = cv2.imdecode(bytes_as_np_array, cv2.IMREAD_GRAYSCALE)
+
+    wpath = '/tmp/' + str(uuid.uuid4()) + '_' + os.path.split(object)[-1].replace('.', '_') + '.' + img_type
+    cv2.imwrite(wpath, image)
+    f = open(wpath, 'rb')
+    result = f.read()
+    bottle.response.status = '200 OK'
+    bottle.response.content_type = 'image/' + img_type
+    return result
+
+
 def make_response(context, img):
     target = bottle.request.query.get('target')
     if target is not None and len(target) > 0:
@@ -40,6 +72,7 @@ def make_response(context, img):
         bottle.response.content_type = 'image/jpeg'
         return img.make_blob()
 
+
 @bottle.route('/pinjie', method='GET')
 def pinjie():
     try:
@@ -49,14 +82,15 @@ def pinjie():
         context = bottle.request.environ.get('fc.context')
         with Image(file=oss_get_image_data(context, image1)) as f1:
             with Image(file=oss_get_image_data(context, image2)) as f2:
-                with Image(width=f1.width+f2.width+10, height=max(f1.height, f2.height)) as img:
+                with Image(width=f1.width + f2.width + 10, height=max(f1.height, f2.height)) as img:
                     img.format = 'jpg'
                     img.composite(f1, left=0, top=0)
-                    img.composite(f2, left=f1.width+10, top=0)
+                    img.composite(f2, left=f1.width + 10, top=0)
                     return make_response(context, img)
     except Exception as ex:
         bottle.response.content_type = 'text/plain'
         return 'ERROR: ' + traceback.format_exc()
+
 
 @bottle.route('/watermark', method='GET')
 def watermark():
@@ -70,7 +104,7 @@ def watermark():
             draw.fill_color = Color('red')
             draw.font_size = 24
             with Image(width=200, height=50, background=Color('transparent')) as pic:
-                draw.text(10, int(pic.height/2), text)
+                draw.text(10, int(pic.height / 2), text)
                 draw(pic)
                 pic.alpha = True
                 pic.format = 'png'
@@ -80,7 +114,7 @@ def watermark():
             with Image(filename='/tmp/water.png') as water:
                 with img.clone() as base:
                     base.format = 'jpg'
-                    base.watermark(water, 0.3, 0, int(img.height-30))
+                    base.watermark(water, 0.3, 0, int(img.height - 30))
                     return make_response(context, base)
     except Exception as ex:
         bottle.response.content_type = 'text/plain'
@@ -101,9 +135,36 @@ def format():
         bottle.response.content_type = 'text/plain'
         return 'ERROR: ' + traceback.format_exc()
 
-@ bottle.route('/', method='GET')
+
+@bottle.route('/gray', method='GET')
+def gray():
+    try:
+        path = bottle.request.query.get('img')
+        parts = path.split('/')
+        bucket = parts[0]
+        object = '/'.join(parts[1:])
+        result = oss_image_turn_gray(bucket,object)
+        return result
+    except Exception as ex:
+        bottle.response.content_type = 'text/plain'
+        return 'ERROR: ' + traceback.format_exc()
+
+
+# @bottle.route('/<path:path>')
+# def gray_index(path):
+#     try:
+#         bucket = {your bucket name}
+#         result = oss_image_turn_gray(bucket,path)
+#         return result
+#     except Exception as ex:
+#         bottle.response.content_type = 'text/plain'
+#         return 'ERROR: ' + traceback.format_exc()
+
+
+@bottle.route('/', method='GET')
 def index():
     return bottle.template('./index.html')
+
 
 app = bottle.default_app()
 
