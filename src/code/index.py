@@ -104,19 +104,18 @@ def format():
         bottle.response.content_type = 'text/plain'
         return 'ERROR: ' + traceback.format_exc()
 
-@bottle.route('/gray',method='GET')
-def gray():
+@bottle.route('/gray/<path:path>')
+def gray(path):
     try:
         OSS_BUCKET_NAME = 'zc-tmp'
         context = bottle.request.environ.get('fc.context')
-        path_info = bottle.request.query.get('img')
-        bpath = path_info
+        path_info = path
         creds = context.credentials
         auth = oss2.StsAuth(creds.accessKeyId,
                             creds.accessKeySecret, creds.securityToken)
         bucket = oss2.Bucket(auth, 'http://oss-cn-hangzhou.aliyuncs.com', OSS_BUCKET_NAME)
         fpath = '/tmp/' + str(uuid.uuid4()) + '_' + os.path.split(path_info)[-1]
-        bucket.get_object_to_file(bpath, fpath)
+        bucket.get_object_to_file(path_info, fpath)
         image = cv2.imread(fpath)
 
         # 转为灰度图像
