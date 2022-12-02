@@ -7,6 +7,7 @@ import uuid
 import cv2
 import os
 import json
+import numpy as np
 from wand.image import Image
 from wand.drawing import Drawing
 from wand.color import Color
@@ -34,6 +35,31 @@ def oss_save_image_data(context, img, path):
     oss_client = oss2.Bucket(auth, 'oss-' + context.region +
                              '-internal.aliyuncs.com', bucket)
     oss_client.put_object(object, img.make_blob())
+
+
+def oss_image_turn_gray(bucket, object):
+    img_type = object.split('.')[-1]
+    if img_type != 'jpg' and img_type != 'jpeg' and img_type != 'webp' and img_type != 'png':
+        img_type = 'jpeg'
+
+    context = bottle.request.environ.get('fc.context')
+    creds = context.credentials
+    auth = oss2.StsAuth(creds.accessKeyId,
+                        creds.accessKeySecret, creds.securityToken)
+    oss_client = oss2.Bucket(auth, 'oss-' + context.region +
+                             '-internal.aliyuncs.com', bucket)
+
+    object_stream = oss_client.get_object(object)
+    bytes_as_np_array = np.frombuffer(object_stream.read(), dtype=np.uint8)
+    image = cv2.imdecode(bytes_as_np_array, cv2.IMREAD_GRAYSCALE)
+
+    wpath = '/tmp/' + str(uuid.uuid4()) + '_' + os.path.split(object)[-1].replace('.', '_') + '.' + img_type
+    cv2.imwrite(wpath, image)
+    f = open(wpath, 'rb')
+    result = f.read()
+    bottle.response.status = '200 OK'
+    bottle.response.content_type = 'image/' + img_type
+    return result
 
 
 def make_response(context, img):
@@ -117,29 +143,22 @@ def gray():
         parts = path.split('/')
         bucket = parts[0]
         object = '/'.join(parts[1:])
-        img_type = object.split('.')[-1]
-        context = bottle.request.environ.get('fc.context')
-        creds = context.credentials
-        auth = oss2.StsAuth(creds.accessKeyId,
-                            creds.accessKeySecret, creds.securityToken)
-        oss_client = oss2.Bucket(auth, 'oss-' + context.region +
-                                 '-internal.aliyuncs.com', bucket)
-        fpath = '/tmp/' + str(uuid.uuid4()) + '_' + os.path.split(object)[-1]
-        oss_client.get_object_to_file(object, fpath)
-        image = cv2.imread(fpath)
-
-        # 转为灰度图像
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        wpath = fpath.replace(".", "_") + '.'+img_type
-        cv2.imwrite(wpath, image)
-        f = open(wpath, 'rb')
-        result = f.read()
-        bottle.response.status = '200 OK'
-        bottle.response.content_type = 'image/'+img_type
+        result = oss_image_turn_gray(bucket,object)
         return result
     except Exception as ex:
         bottle.response.content_type = 'text/plain'
         return 'ERROR: ' + traceback.format_exc()
+
+
+# @bottle.route('/<path:path>')
+# def gray_index(path):
+#     try:
+#         bucket = {your bucket name}
+#         result = oss_image_turn_gray(bucket,path)
+#         return result
+#     except Exception as ex:
+#         bottle.response.content_type = 'text/plain'
+#         return 'ERROR: ' + traceback.format_exc()
 
 
 @bottle.route('/', method='GET')
